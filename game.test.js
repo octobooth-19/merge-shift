@@ -402,3 +402,27 @@ test("standing still is not a viable strategy across seeds and starting columns"
     assert.match(game.event, /head/, `seed ${seed}`);
   }
 });
+test("jumping from a stack top's own level never shoves that settled crate", () => {
+  for (const direction of [-1, 1]) {
+    const game = emptyGame();
+    const standCol = 4 - direction;
+    game.grid[ROWS - 1][standCol] = true;
+    game.grid[ROWS - 1][4] = true;
+    game.grid[ROWS - 2][4] = true;
+    game.player.x = direction > 0 ? 4 - PW - .01 : 5.01;
+    game.player.y = ROWS - 1 - PH;
+    advance(game, .6, { left: direction < 0, right: direction > 0, jump: true });
+    assert.equal(game.grid[ROWS - 2][4], true);
+    assert.equal(game.status, "running");
+  }
+});
+test("raised-level jump into a two-crate stack above it also pushes the top", () => {
+  const game = emptyGame();
+  game.grid[ROWS - 1][3] = true;
+  for (const y of [ROWS - 1, ROWS - 2, ROWS - 3]) game.grid[y][4] = true;
+  game.player.x = 4 - PW - .01;
+  game.player.y = ROWS - 1 - PH;
+  for (let i = 0; i < 60 && game.grid[ROWS - 3][4]; i++) game.update(1 / 120, { right: true, jump: true });
+  assert.equal(game.grid[ROWS - 3][4], false);
+  assert.equal(game.grid[ROWS - 2][4], true);
+});

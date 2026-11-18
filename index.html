@@ -46,7 +46,7 @@
       <aside class="left">
         <section class="panel"><p class="label">YOUR SCORE</p><div class="score" id="score">00000</div><div class="best"><span>PERSONAL BEST</span><strong id="best">00000</strong></div></section>
         <section class="panel"><div class="stats"><div><p class="label">SPRINT</p><div class="stat-value" id="level">01</div></div><div><p class="label">MERGES</p><div class="stat-value" id="rows">00</div></div></div><div class="meter"><div id="progress"></div></div><div class="hint progress-label" id="progress-label">3 merges to the next sprint</div></section>
-        <p class="note"><span>// DEVELOPER NOTES</span><br>Walk to push. Jump to climb.<br>Air-shove falling crates or stack tops.<br>Red arms are aiming at you.<br>One extra arm every 2 sprints.</p>
+        <p class="note"><span>// DEVELOPER NOTES</span><br>Walk to push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>Red arms are aiming at you.<br>One extra arm every 2 sprints.</p>
       </aside>
       <section class="game-column" aria-label="Merge Shift game">
         <div class="cabinet">
@@ -54,7 +54,7 @@
           <div class="screen">
             <canvas id="game" width="288" height="420" tabindex="0" aria-label="Commit warehouse game. Arrow keys move and push. Space jumps. Jumping protects floor crates but can push stack tops or falling crates. P pauses. Dodge red targeted drops."></canvas>
             <div class="screen-status" id="status" role="status" aria-live="polite"></div>
-            <div class="overlay" id="overlay"><div class="mini-crate" aria-hidden="true"></div><h2 id="overlay-title">Less room.<br>More commits.</h2><p id="overlay-copy">Arrows move and push. Jump to climb.<br>Air-shove falling crates or stack tops.<br>See a red arm? It's aiming at you.</p><button class="primary" id="start">LET'S SHIP IT &gt;</button><span class="sub" id="overlay-sub">ARROWS TO MOVE / SPACE TO JUMP</span></div>
+            <div class="overlay" id="overlay"><div class="mini-crate" aria-hidden="true"></div><h2 id="overlay-title">Less room.<br>More commits.</h2><p id="overlay-copy">Arrows move and push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>See a red arm? It's aiming at you.</p><button class="primary" id="start">LET'S SHIP IT &gt;</button><span class="sub" id="overlay-sub">ARROWS TO MOVE / SPACE TO JUMP</span></div>
           </div>
           <div class="cabinet-bottom"><span id="branch-label">* main / 3 arms</span><span id="drop-label">AWAITING FIRST COMMIT</span></div>
         </div>
@@ -71,7 +71,7 @@
     </div>
     <footer><span>OLD-SCHOOL GAMEPLAY. NEW-SCHOOL MERGE CONFLICTS.</span><span>GITHUB-INSPIRED <span class="accent">/</span> BUILT TO PLAY</span></footer>
   </main>
-  <script src="game.js?v=2"></script>
+  <script src="game.js?v=3"></script>
   <script>
     "use strict";
     const { Game, COLS, ROWS } = StackGame;

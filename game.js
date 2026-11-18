@@ -12,7 +12,7 @@
       this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
       for (const x of [0, 1, COLS - 2, COLS - 1]) this.grid[ROWS - 1][x] = true;
       this.grid[ROWS - 2][0] = this.grid[ROWS - 2][COLS - 1] = true;
-      this.player = { x: COLS / 2 - PW / 2, y: ROWS - PH, w: PW, h: PH, vy: 0, grounded: true, facing: 1, walk: 0 };
+      this.player = { x: COLS / 2 - PW / 2, y: ROWS - PH, w: PW, h: PH, vy: 0, grounded: true, groundFeet: ROWS, facing: 1, walk: 0 };
       this.falling = [];
       this.status = "ready";
       this.score = 0;
@@ -144,6 +144,7 @@
     movePlayer(dt, input) {
       const p = this.player;
       const direction = Number(!!input.right) - Number(!!input.left);
+      if (p.grounded) p.groundFeet = p.y + PH;
       if (input.jump && !this.previousJump && p.grounded) {
         p.vy = -9.1;
         p.grounded = false;
@@ -160,7 +161,8 @@
           const torsoOverlap = Math.min(p.y + PH - 0.1, box.y + 1) - Math.max(p.y + 0.2, box.y);
           const canPush = airborneBox ? torsoOverlap > 0.2 :
             (p.grounded && Math.abs(p.y + PH - box.y - 1) < 0.08) ||
-            (!p.grounded && box.y < ROWS - 1 && torsoOverlap > 0.2);
+            (!p.grounded && box.y < ROWS - 1 && this.grid[box.y + 1][box.x] &&
+              Math.abs((p.groundFeet ?? ROWS) - (box.y + 2)) < 0.1 && torsoOverlap > 0.2);
           if (canPush && this.push(box, direction)) hits = this.solids(next);
         }
         if (!hits.length) p.x = next.x;
