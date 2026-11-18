@@ -19,7 +19,9 @@
       this.lines = 0;
       this.level = 1;
       this.elapsed = 0;
-      this.deliveryBag = [];
+      this.dispatches = 0;
+      this.deliveryNumber = 0;
+      this.lastDelivery = Array(COLS).fill(0);
       this.arms = [];
       for (let i = 0; i < 3; i++) this.addArm();
       this.pushClock = 0;
@@ -30,16 +32,33 @@
     }
     get interval() { return Math.max(1.25, 3.2 - (this.level - 1) * 0.18); }
     get warning() { return this.arms.some(arm => this.armWarning(arm)); }
+    get targetedWarning() { return this.arms.some(arm => arm.targeted && this.armWarning(arm)); }
     armWarning(arm) { return !arm.retreat && arm.clock > this.interval - 0.8; }
-    aimArm(arm) {
-      if (!this.deliveryBag.length) {
-        this.deliveryBag = Array.from({ length: COLS }, (_, col) => col);
-        for (let i = COLS - 1; i > 0; i--) {
-          const j = Math.floor(this.random() * (i + 1));
-          [this.deliveryBag[i], this.deliveryBag[j]] = [this.deliveryBag[j], this.deliveryBag[i]];
-        }
+    columnLoads(excludeArm) {
+      const loads = Array(COLS).fill(0);
+      for (const row of this.grid) row.forEach((occupied, col) => { if (occupied) loads[col]++; });
+      for (const box of this.falling) loads[box.x]++;
+      for (const arm of this.arms) {
+        if (arm !== excludeArm && !arm.retreat) loads[arm.col]++;
       }
-      arm.col = this.deliveryBag.pop();
+      return loads;
+    }
+    aimArm(arm) {
+      const loads = this.columnLoads(arm);
+      const minimum = Math.min(...loads);
+      const playerCol = Math.max(0, Math.min(COLS - 1, Math.floor(this.player.x + PW / 2)));
+      this.dispatches++;
+      arm.targeted = this.dispatches % 4 === 0 && loads[playerCol] <= minimum + 1;
+      if (arm.targeted) {
+        arm.col = playerCol;
+        return;
+      }
+      let candidates = loads.map((load, col) => load === minimum ? col : -1).filter(col => col >= 0);
+      const oldest = Math.min(...candidates.map(col => this.lastDelivery[col]));
+      if (this.deliveryNumber - oldest >= COLS * 2) {
+        candidates = candidates.filter(col => this.lastDelivery[col] === oldest);
+      }
+      arm.col = candidates[Math.floor(this.random() * candidates.length)];
     }
     addArm() {
       const i = this.arms.length;
@@ -135,7 +154,15 @@
         p.walk += dt * 13;
         const next = { ...p, x: Math.max(0, Math.min(COLS - PW, p.x + direction * 4.5 * dt)) };
         let hits = this.solids(next);
-        if (input.push && hits.length === 1 && this.pushClock <= 0 && this.push(hits[0], direction)) hits = this.solids(next);
+        if (hits.length === 1 && this.pushClock <= 0) {
+          const box = hits[0];
+          const airborneBox = this.falling.includes(box);
+          const torsoOverlap = Math.min(p.y + PH - 0.1, box.y + 1) - Math.max(p.y + 0.2, box.y);
+          const canPush = airborneBox ? torsoOverlap > 0.2 :
+            (p.grounded && Math.abs(p.y + PH - box.y - 1) < 0.08) ||
+            (!p.grounded && box.y < ROWS - 1 && torsoOverlap > 0.2);
+          if (canPush && this.push(box, direction)) hits = this.solids(next);
+        }
         if (!hits.length) p.x = next.x;
         else p.x = direction > 0 ? Math.min(...hits.map(b => b.x)) - PW : Math.max(...hits.map(b => b.x + 1));
       }
@@ -223,7 +250,8 @@
         if (arm.clock < this.interval) continue;
         if (this.grid[0][arm.col]) { this.lose("The warehouse is full."); return; }
         if (this.falling.some(box => box.x === arm.col && box.y < 0.85)) continue;
-        this.falling.push({ x: arm.col, y: -1 / 6, vy: 0 });
+        this.falling.push({ x: arm.col, y: -1 / 6, vy: 0, targeted: arm.targeted });
+        this.lastDelivery[arm.col] = ++this.deliveryNumber;
         arm.clock = -0.75;
         arm.retreat = true;
       }

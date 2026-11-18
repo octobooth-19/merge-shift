@@ -17,7 +17,7 @@ test("walking pushes a single floor crate into a gap", () => {
   const game = emptyGame();
   game.grid[ROWS - 1][4] = true;
   game.player.x = 4 - PW - .01;
-  advance(game, .03, { right: true, push: true });
+  advance(game, .03, { right: true });
   assert.equal(game.grid[ROWS - 1][4], false);
   assert.equal(game.grid[ROWS - 1][5], true);
   assert.equal(game.status, "running");
@@ -28,7 +28,7 @@ test("stacked crates and blocked destinations cannot be pushed", () => {
     game.grid[ROWS - 1][4] = true;
     game.grid[stacked ? ROWS - 2 : ROWS - 1][stacked ? 4 : 5] = true;
     game.player.x = 4 - PW - .01;
-    advance(game, .1, { right: true, push: true });
+    advance(game, .1, { right: true });
     assert.equal(game.grid[ROWS - 1][4], true);
     assert.ok(game.player.x + PW <= 4.001);
   }
@@ -146,16 +146,16 @@ test("crates have a slower acceleration and terminal speed", () => {
   game.update(1 / 120);
   assert.equal(box.vy, 9);
 });
-test("airborne player can push a settled crate", () => {
+test("airborne player cannot push a settled floor crate", () => {
   const game = emptyGame();
   game.grid[ROWS - 1][4] = true;
   game.player.x = 4 - PW - .01;
   game.player.y = ROWS - PH - .4;
   game.player.grounded = false;
   game.player.vy = -1;
-  game.update(1 / 120, { right: true, push: true });
-  assert.equal(game.grid[ROWS - 1][4], false);
-  assert.equal(game.grid[ROWS - 1][5], true);
+  game.update(1 / 120, { right: true });
+  assert.equal(game.grid[ROWS - 1][4], true);
+  assert.equal(game.grid[ROWS - 1][5], false);
   assert.equal(game.status, "running");
 });
 test("airborne player can shove a falling crate in either direction", () => {
@@ -167,7 +167,7 @@ test("airborne player can shove a falling crate in either direction", () => {
     game.player.y = 5.3;
     game.player.vy = -1;
     game.player.grounded = false;
-    game.update(1 / 120, { right: direction > 0, left: direction < 0, push: true });
+    game.update(1 / 120, { right: direction > 0, left: direction < 0 });
     assert.equal(box.x, 4 + direction);
     assert.equal(game.status, "running");
   }
@@ -181,7 +181,7 @@ test("air pushes cannot shove through another falling crate or a wall", () => {
     game.player.x = x - PW - .01;
     game.player.y = 5.2;
     game.player.grounded = false;
-    game.update(1 / 120, { right: true, push: true });
+    game.update(1 / 120, { right: true });
     assert.equal(box.x, x);
     assert.equal(game.status, "running");
   }
@@ -262,39 +262,45 @@ test("delivery waits for a preceding crate to clear the entrance", () => {
   assert.equal(game.falling.length, 2);
   assert.equal(arm.retreat, true);
 });
-test("all arms share a balanced bag covering every column before repeating", () => {
-  for (const random of [() => 0, () => .5, () => .99999, Math.random]) {
-    const game = new Game(random);
-    const assigned = game.arms.map(arm => arm.col);
-    for (let i = 3; i < COLS * 30; i++) {
-      const arm = game.arms[i % game.arms.length];
-      game.aimArm(arm);
-      assigned.push(arm.col);
-    }
-    for (let i = 0; i < assigned.length; i += COLS) {
-      assert.deepEqual([...assigned.slice(i, i + COLS)].sort(), Array.from({ length: COLS }, (_, col) => col));
-    }
-  }
-});
-test("delivery stays balanced with six arms at different cycle speeds", () => {
+test("normal delivery prioritizes low piles, including airborne and reserved crates", () => {
   const game = emptyGame();
-  while (game.arms.length < 6) game.addArm();
-  const counts = Array(COLS).fill(0);
-  for (let i = 0; i < 480; i++) {
-    for (const other of game.arms) other.clock = -100;
-    const arm = game.arms[[0, 1, 0, 2, 0, 3, 4, 0, 5][i % 9]];
-    game.falling = [];
-    arm.retreat = false;
-    arm.clock = game.interval;
-    game.update(1 / 120);
-    assert.equal(game.falling.length, 1);
-    counts[game.falling[0].x]++;
-    arm.clock = -.001;
-    game.update(1 / 120);
-  }
-  assert.ok(Math.max(...counts) - Math.min(...counts) <= 6, JSON.stringify(counts));
+  game.arms = [];
+  game.grid[ROWS - 1].fill(true);
+  for (let y = ROWS - 4; y < ROWS - 1; y++) game.grid[y][0] = true;
+  game.falling.push({ x: 1, y: 1, vy: 0 });
+  game.arms.push({ col: 2, retreat: false });
+  const arm = { retreat: false };
+  game.arms.push(arm);
+  game.dispatches = 0;
+  game.aimArm(arm);
+  assert.ok(arm.col >= 3);
+  assert.equal(game.columnLoads(arm)[0], 4);
+  assert.equal(game.columnLoads(arm)[1], 2);
+  assert.equal(game.columnLoads(arm)[2], 2);
 });
-test("jumping onto a crate never shoves it without deliberate push input", () => {
+test("normal deliveries correct lopsided piles rather than following old assignments", () => {
+  for (const random of [() => 0, () => .5, () => .99999]) {
+    const game = new Game(random);
+    game.arms = [];
+    game.falling = [];
+    game.grid.forEach(row => row.fill(false));
+    for (let y = ROWS - 4; y < ROWS; y++) game.grid[y][0] = true;
+    const arm = { retreat: false };
+    game.arms.push(arm);
+    const visits = new Set();
+    for (let i = 0; i < 28; i++) {
+      game.dispatches = 0;
+      game.aimArm(arm);
+      assert.notEqual(arm.col, 0);
+      visits.add(arm.col);
+      const height = game.columnLoads(arm)[arm.col];
+      game.grid[ROWS - height - 1][arm.col] = true;
+    }
+    assert.equal(visits.size, COLS - 1);
+    assert.deepEqual(game.columnLoads(arm), Array(COLS).fill(4));
+  }
+});
+test("jumping onto a floor crate never shoves it in either direction", () => {
   for (const direction of [-1, 1]) {
     const game = emptyGame();
     game.grid[ROWS - 1][4] = true;
@@ -306,13 +312,93 @@ test("jumping onto a crate never shoves it without deliberate push input", () =>
     assert.ok(game.player.y + PH <= ROWS - 1 + .01);
   }
 });
-test("walking into a crate blocks movement until push is held", () => {
+test("walking into a floor crate pushes with arrows alone", () => {
   const game = emptyGame();
   game.grid[ROWS - 1][4] = true;
   game.player.x = 4 - PW - .01;
-  advance(game, .2, { right: true });
-  assert.equal(game.grid[ROWS - 1][4], true);
-  assert.ok(game.player.x + PW <= 4.001);
-  advance(game, .03, { right: true, push: true });
+  advance(game, .03, { right: true });
   assert.equal(game.grid[ROWS - 1][5], true);
+});
+test("jumping from below can push a two-crate stack's top crate but not its base", () => {
+  for (const direction of [-1, 1]) {
+    const game = emptyGame();
+    game.grid[ROWS - 1][4] = true;
+    game.grid[ROWS - 2][4] = true;
+    game.player.x = direction > 0 ? 4 - PW - .01 : 5.01;
+    for (let i = 0; i < 60 && game.grid[ROWS - 2][4]; i++) {
+      game.update(1 / 120, { left: direction < 0, right: direction > 0, jump: true });
+    }
+    assert.equal(game.grid[ROWS - 1][4], true);
+    assert.equal(game.grid[ROWS - 2][4], false);
+    assert.ok(game.falling.some(box => box.x === 4 + direction));
+    assert.equal(game.status, "running");
+  }
+});
+test("a stack's top crate cannot be air-pushed into another crate", () => {
+  for (const direction of [-1, 1]) {
+    const game = emptyGame();
+    for (const x of [4, 4 + direction]) {
+      game.grid[ROWS - 1][x] = true;
+      game.grid[ROWS - 2][x] = true;
+    }
+    game.player.x = direction > 0 ? 4 - PW - .01 : 5.01;
+    advance(game, .45, { left: direction < 0, right: direction > 0, jump: true });
+    assert.equal(game.grid[ROWS - 2][4], true);
+    assert.equal(game.grid[ROWS - 2][4 + direction], true);
+    assert.equal(game.grid[ROWS - 1][4], true);
+  }
+});
+test("landing on a falling crate does not accidentally shove its top edge", () => {
+  const game = emptyGame(), box = { x: 4, y: 6, vy: 0 };
+  game.falling.push(box);
+  game.player.x = 4 - PW - .01;
+  game.player.y = box.y - PH + .05;
+  game.player.vy = 1;
+  game.player.grounded = false;
+  game.update(1 / 120, { right: true });
+  assert.equal(box.x, 4);
+});
+test("every fourth planned delivery can target the bot without overloading its column", () => {
+  const game = emptyGame(), arm = game.arms[0];
+  game.arms = [arm];
+  game.player.x = 4.2;
+  game.dispatches = 3;
+  game.aimArm(arm);
+  assert.equal(arm.targeted, true);
+  assert.equal(arm.col, 4);
+  game.grid[ROWS - 1][4] = true;
+  game.grid[ROWS - 2][4] = true;
+  game.dispatches = 3;
+  game.aimArm(arm);
+  assert.equal(arm.targeted, false);
+  assert.notEqual(arm.col, 4);
+});
+test("targeted deliveries warn, stay locked, and can be dodged", () => {
+  const game = emptyGame(), arm = game.arms[0];
+  game.player.x = 4.2;
+  game.dispatches = 3;
+  game.aimArm(arm);
+  assert.equal(arm.targeted, true);
+  arm.clock = game.interval - .79;
+  assert.equal(game.targetedWarning, true);
+  advance(game, .82, { right: true });
+  assert.equal(arm.col, 4);
+  assert.ok(game.falling.some(box => box.x === 4 && box.targeted));
+  assert.equal(game.targetedWarning, false);
+  advance(game, 1.8);
+  assert.equal(game.status, "running");
+});
+test("standing still is not a viable strategy across seeds and starting columns", () => {
+  for (let seed = 1; seed <= 32; seed++) {
+    let value = seed;
+    const game = new Game(() => {
+      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+      return value / 4294967296;
+    });
+    game.start();
+    game.player.x = 2 + seed % 4 + .1;
+    advance(game, 20);
+    assert.equal(game.status, "gameover", `seed ${seed} survived idle`);
+    assert.match(game.event, /head/, `seed ${seed}`);
+  }
 });

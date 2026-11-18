@@ -21,18 +21,19 @@ Scan this code to play on your phone:
 | Action | Desktop | Phone |
 | --- | --- | --- |
 | Move | Left/right arrows or A/D | Hold left/right |
-| Push | Hold Shift + direction | Hold PUSH + direction |
+| Push | Move into a crate with arrows or A/D | Hold left/right into a crate |
 | Jump | Space, up arrow, or W | Tap JUMP |
 | Pause/resume | P or Escape | PAUSE / RESUME |
 | Restart | R | RESTART |
 
-Pushing is deliberate so jumping onto a crate does not accidentally shove it. You can also push while airborne. Touch controls support multiple fingers; release PUSH when you want to jump onto a crate instead.
+Walking into a crate pushes it automatically. While jumping, crates directly on the floor stay put, so you can climb onto them without shoving them away. You can still push falling crates or the top crate of a stack while airborne, provided the destination is clear. A crate supporting another crate cannot be pushed. Touch controls support moving and jumping with multiple fingers.
 
 ## Rules
 
 - Fill all eight columns of a row to merge it away.
 - Three arms bring commits in from offscreen, release them, and retreat.
-- All arms share a shuffled delivery bag: each group of eight assigned deliveries visits every column once.
+- Normal deliveries favor the least-loaded columns, counting settled crates, falling crates, and crates already assigned to other arms. This responds to the actual board instead of following a prearranged sequence.
+- Every fourth planned delivery attempts to target the bot's current column, unless that column is already too loaded. Red arms and crates, a red column outline, and a `TARGET LOCKED` warning identify these attacks. Targets stay fixed once chosen, so you can dodge them. Standing still is dangerous.
 - Every three merged rows starts a harder sprint. Every two sprints adds another arm, up to six.
 - Only descending commits hitting the bot's head are lethal. Side contact and landing on crates are safe. A full-height queue also ends the game.
 - Best scores stay in your browser. Leaving the tab pauses play.
