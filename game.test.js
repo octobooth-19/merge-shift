@@ -426,3 +426,45 @@ test("raised-level jump into a two-crate stack above it also pushes the top", ()
   assert.equal(game.grid[ROWS - 3][4], false);
   assert.equal(game.grid[ROWS - 2][4], true);
 });
+test("locked crates cannot be pushed once landed but clear with full rows", () => {
+  const game = emptyGame();
+  game.falling.push({ x: 4, y: ROWS - 1.5, vy: 0, locked: true });
+  advance(game, .5);
+  assert.equal(game.grid[ROWS - 1][4], true);
+  assert.equal(game.locked[ROWS - 1][4], true);
+  game.player.x = 4 - PW - .01;
+  advance(game, .4, { right: true });
+  assert.equal(game.grid[ROWS - 1][4], true);
+  assert.equal(game.grid[ROWS - 1][5], false);
+  for (let x = 0; x < COLS; x++) if (x !== 4) game.grid[ROWS - 1][x] = true;
+  game.grid[ROWS - 2][4] = true;
+  game.clearRows();
+  assert.equal(game.locked[ROWS - 1][4], false);
+  assert.ok(game.falling.some(box => box.x === 4 && !box.locked));
+});
+test("locked crates can still be shoved while falling and stay locked after unsupported drops", () => {
+  const game = emptyGame(), box = { x: 4, y: ROWS - 1.3, vy: 0, locked: true };
+  game.falling.push(box);
+  game.player.x = 4 - PW - .01;
+  game.update(1 / 120, { right: true });
+  assert.equal(box.x, 5);
+  advance(game, 1);
+  assert.equal(game.locked[ROWS - 1][5], true);
+  game.grid[ROWS - 2][5] = true;
+  game.locked[ROWS - 2][5] = true;
+  game.grid[ROWS - 1][5] = false;
+  game.locked[ROWS - 1][5] = false;
+  game.unsupported();
+  assert.ok(game.falling.some(b => b.x === 5 && b.locked));
+});
+test("arms deliver locked crates periodically, never on targeted drops", () => {
+  const game = new Game(() => 0.5);
+  game.start();
+  let locked = 0;
+  for (let i = 0; i < 60; i++) {
+    const arm = { side: 1, clock: 0, retreat: false };
+    game.aimArm(arm);
+    if (arm.locked) { locked++; assert.equal(arm.targeted, false); }
+  }
+  assert.ok(locked >= 8 && locked <= 14, `locked=${locked}`);
+});

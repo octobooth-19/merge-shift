@@ -46,15 +46,15 @@
       <aside class="left">
         <section class="panel"><p class="label">YOUR SCORE</p><div class="score" id="score">00000</div><div class="best"><span>PERSONAL BEST</span><strong id="best">00000</strong></div></section>
         <section class="panel"><div class="stats"><div><p class="label">SPRINT</p><div class="stat-value" id="level">01</div></div><div><p class="label">MERGES</p><div class="stat-value" id="rows">00</div></div></div><div class="meter"><div id="progress"></div></div><div class="hint progress-label" id="progress-label">3 merges to the next sprint</div></section>
-        <p class="note"><span>// DEVELOPER NOTES</span><br>Walk to push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>Red arms are aiming at you.<br>One extra arm every 2 sprints.</p>
+        <p class="note"><span>// DEVELOPER NOTES</span><br>Walk to push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>Red arms are aiming at you.<br>Padlocked crates never move once landed.<br>One extra arm every 2 sprints.</p>
       </aside>
       <section class="game-column" aria-label="Merge Shift game">
         <div class="cabinet">
           <div class="screen-top"><span id="screen-label">main / sprint-01</span><span id="clock">00:00</span></div>
           <div class="screen">
-            <canvas id="game" width="288" height="420" tabindex="0" aria-label="Commit warehouse game. Arrow keys move and push. Space jumps. Jumping protects floor crates but can push stack tops or falling crates. P pauses. Dodge red targeted drops."></canvas>
+            <canvas id="game" width="288" height="420" tabindex="0" aria-label="Commit warehouse game. Arrow keys move and push. Space jumps. Jumping protects floor crates but can push stack tops or falling crates. P pauses. Dodge red targeted drops. Padlocked crates cannot be pushed once landed."></canvas>
             <div class="screen-status" id="status" role="status" aria-live="polite"></div>
-            <div class="overlay" id="overlay"><div class="mini-crate" aria-hidden="true"></div><h2 id="overlay-title">Less room.<br>More commits.</h2><p id="overlay-copy">Arrows move and push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>See a red arm? It's aiming at you.</p><button class="primary" id="start">LET'S SHIP IT &gt;</button><span class="sub" id="overlay-sub">ARROWS TO MOVE / SPACE TO JUMP</span></div>
+            <div class="overlay" id="overlay"><div class="mini-crate" aria-hidden="true"></div><h2 id="overlay-title">Less room.<br>More commits.</h2><p id="overlay-copy">Arrows move and push. Jump to climb.<br>Air-shove falling crates, or the top of<br>a 2-high pile from one level down.<br>See a red arm? It's aiming at you.<br>Padlocked crates can't be pushed once landed.</p><button class="primary" id="start">LET'S SHIP IT &gt;</button><span class="sub" id="overlay-sub">ARROWS TO MOVE / SPACE TO JUMP</span></div>
           </div>
           <div class="cabinet-bottom"><span id="branch-label">* main / 3 arms</span><span id="drop-label">AWAITING FIRST COMMIT</span></div>
         </div>
@@ -71,7 +71,7 @@
     </div>
     <footer><span>OLD-SCHOOL GAMEPLAY. NEW-SCHOOL MERGE CONFLICTS.</span><span>GITHUB-INSPIRED <span class="accent">/</span> BUILT TO PLAY</span></footer>
   </main>
-  <script src="game.js?v=3"></script>
+  <script src="game.js?v=4"></script>
   <script>
     "use strict";
     const { Game, COLS, ROWS } = StackGame;
@@ -99,7 +99,7 @@
         console.warn("Audio could not be started:", error);
       }
     }
-    function crate(x, y, falling = false, targeted = false) {
+    function crate(x, y, falling = false, targeted = false, locked = false) {
       const px = Math.round(x*T), py = Math.round(TOP+y*T);
       const accent=targeted?"#ff7b72":falling?"#d2a8ff":"#7ee787";
       ctx.fillStyle=targeted?"#3f1d24":falling?"#30213e":"#123222";ctx.strokeStyle=targeted?"#da3633":falling?"#8957e5":"#2d7746";ctx.lineWidth=1;
@@ -108,6 +108,14 @@
       ctx.beginPath();ctx.arc(px+18,py+18,5,0,Math.PI*2);ctx.stroke();
       ctx.fillStyle="#ffffff12";ctx.fillRect(px+7,py+5,22,1);
       if(falling){ctx.fillStyle=targeted?"#ff7b7266":"#d2a8ff66";ctx.fillRect(px+11,py-9,2,6);ctx.fillRect(px+23,py-15,2,10);}
+      if(locked){
+        ctx.fillStyle="#2b3036";ctx.strokeStyle="#8b949e";ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.roundRect(px+2,py+2,32,32,5);ctx.fill();ctx.stroke();
+        ctx.strokeStyle="#6e7681";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+4,py+4);ctx.lineTo(px+32,py+32);ctx.moveTo(px+32,py+4);ctx.lineTo(px+4,py+32);ctx.stroke();
+        ctx.fillStyle="#2b3036";ctx.fillRect(px+10,py+11,16,17);
+        ctx.strokeStyle="#e3b341";ctx.lineWidth=2;ctx.beginPath();ctx.arc(px+18,py+16,4.5,Math.PI,0);ctx.stroke();
+        ctx.fillStyle="#e3b341";ctx.fillRect(px+12,py+16,12,10);ctx.fillStyle="#2b3036";ctx.fillRect(px+17,py+19,2,4);
+      }
     }
     function draw() {
       ctx.fillStyle = light; ctx.fillRect(0,0,W,H);
@@ -130,14 +138,14 @@
             ctx.strokeRect(arm.col*T+5,TOP+5,T-10,H-TOP-12);
           }
         }
-        if (!arm.retreat) crate(game.armPosition(arm),-1/6,true,arm.targeted);
+        if (!arm.retreat) crate(game.armPosition(arm),-1/6,true,arm.targeted,arm.locked);
         ctx.fillStyle = "#6e7681"; ctx.fillRect(craneX-17,10,34,19); ctx.fillStyle = "#21262d"; ctx.fillRect(craneX-11,14,22,10);
         ctx.fillStyle = arm.retreat ? "#8b949e" : arm.targeted ? "#ff7b72" : "#7ee787";ctx.fillRect(craneX-7,17,14,3);
         ctx.fillStyle = "#8b949e"; ctx.fillRect(craneX-2,29,4,12);
         ctx.fillRect(craneX-11,38,4,15); ctx.fillRect(craneX+7,38,4,15); ctx.fillRect(craneX-9,49,6,4); ctx.fillRect(craneX+3,49,6,4);
       }
-      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(game.grid[y][x]) crate(x,y);
-      for(const box of game.falling) crate(box.x,box.y,true,box.targeted);
+      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(game.grid[y][x]) crate(x,y,false,false,game.locked[y][x]);
+      for(const box of game.falling) crate(box.x,box.y,true,box.targeted,box.locked);
       const p = game.player, x=Math.round(p.x*T), y=Math.round(TOP+p.y*T);
       const stride = p.grounded && (input.left||input.right) ? Math.sin(p.walk)*3 : 0;
       ctx.fillStyle="#79c0ff";ctx.fillRect(x+10,y-2,3,5);ctx.fillStyle="#7ee787";ctx.fillRect(x+9,y-4,5,3);

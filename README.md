@@ -26,7 +26,9 @@ Scan this code to play on your phone:
 | Pause/resume | P or Escape | PAUSE / RESUME |
 | Restart | R | RESTART |
 
-Walking into a crate pushes it automatically. While jumping, crates directly on the floor stay put, so you can climb onto them without shoving them away. While airborne you can push falling crates, plus one special case: jumping from one level below into a two-crate pile pushes its top crate if the space behind it is clear. Settled crates at your takeoff level never move during a jump. A crate supporting another crate cannot be pushed. Touch controls support moving and jumping with multiple fingers.
+Walking into a crate pushes it automatically. While jumping, crates directly on the floor stay put, so you can climb onto them without shoving them away. While airborne you can push falling crates, plus one special case: jumping from one level below into a two-crate pile pushes its top crate if the space behind it is clear. Settled crates at your takeoff level never move during a jump.
+
+Padlocked steel crates arrive every so often. You can still shove them while they fall, but once they land they never move. Build around them: they still count toward completing a row and clear with it. A crate supporting another crate cannot be pushed. Touch controls support moving and jumping with multiple fingers.
 
 ## Rules
 

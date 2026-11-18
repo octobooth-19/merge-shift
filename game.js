@@ -10,6 +10,7 @@
     }
     reset() {
       this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+      this.locked = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
       for (const x of [0, 1, COLS - 2, COLS - 1]) this.grid[ROWS - 1][x] = true;
       this.grid[ROWS - 2][0] = this.grid[ROWS - 2][COLS - 1] = true;
       this.player = { x: COLS / 2 - PW / 2, y: ROWS - PH, w: PW, h: PH, vy: 0, grounded: true, groundFeet: ROWS, facing: 1, walk: 0 };
@@ -49,6 +50,8 @@
       const playerCol = Math.max(0, Math.min(COLS - 1, Math.floor(this.player.x + PW / 2)));
       this.dispatches++;
       arm.targeted = this.dispatches % 4 === 0 && loads[playerCol] <= minimum + 1;
+      // Every fifth regular delivery is a locked crate that cannot be pushed once it lands.
+      arm.locked = !arm.targeted && this.dispatches % 5 === 3;
       if (arm.targeted) {
         arm.col = playerCol;
         return;
@@ -101,6 +104,7 @@
           this.solids({ x: dest, y: box.y, w: 1, h: 1 }).length ||
           this.solids({ x: box.x, y: box.y - 0.05, w: 1, h: 0.05 }).length) return false;
       if (this.falling.includes(box)) box.x = dest;
+      else if (this.locked[box.y][box.x]) return false;
       else {
         this.grid[box.y][box.x] = false;
         this.grid[box.y][dest] = true;
@@ -116,7 +120,8 @@
         for (let x = 0; x < COLS; x++) {
           if (this.grid[y][x] && !this.grid[y + 1][x]) {
             this.grid[y][x] = false;
-            this.falling.push({ x, y, vy: 0 });
+            this.falling.push({ x, y, vy: 0, locked: this.locked[y][x] });
+            this.locked[y][x] = false;
           }
         }
       }
@@ -126,6 +131,7 @@
       for (let y = 0; y < ROWS; y++) {
         if (this.grid[y].every(Boolean)) {
           this.grid[y].fill(false);
+          this.locked[y].fill(false);
           count++;
         }
       }
@@ -221,6 +227,7 @@
             return;
           } else {
             this.grid[Math.round(box.y)][box.x] = true;
+            this.locked[Math.round(box.y)][box.x] = !!box.locked;
             this.falling.splice(this.falling.indexOf(box), 1);
             this.score += 5;
             this.clearRows();
@@ -252,7 +259,7 @@
         if (arm.clock < this.interval) continue;
         if (this.grid[0][arm.col]) { this.lose("The warehouse is full."); return; }
         if (this.falling.some(box => box.x === arm.col && box.y < 0.85)) continue;
-        this.falling.push({ x: arm.col, y: -1 / 6, vy: 0, targeted: arm.targeted });
+        this.falling.push({ x: arm.col, y: -1 / 6, vy: 0, targeted: arm.targeted, locked: arm.locked });
         this.lastDelivery[arm.col] = ++this.deliveryNumber;
         arm.clock = -0.75;
         arm.retreat = true;
