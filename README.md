@@ -58,6 +58,8 @@ node --test game.test.js
 
 GitHub Pages serves the root of the `main` branch. Changes pushed to `main` are published automatically. The same URL adapts to phone screens, with a compact play layout and multi-touch controls.
 
+When changing `game.js`, increment its `?v=` script URL in `index.html` so returning players receive the updated engine rather than a cached version.
+
 To regenerate the QR image on macOS, using only system frameworks:
 
 ```sh
