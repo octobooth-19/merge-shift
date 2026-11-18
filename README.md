@@ -34,7 +34,7 @@ Padlocked steel crates arrive every so often. You can still shove them while the
 
 - Fill all eight columns of a row to merge it away.
 - Three arms bring commits in from offscreen, release them, and retreat.
-- Normal deliveries favor the least-loaded columns, counting settled crates, falling crates, and crates already assigned to other arms. This responds to the actual board instead of following a prearranged sequence.
+- Normal deliveries bunch up around a favorite area that shifts about every 12 seconds. Every column can still receive crates, and crowded columns get slightly less weight, but arms no longer fill the gaps for you. Already-approaching arms keep their chosen target when the bias shifts.
 - Every fourth planned delivery attempts to target the bot's current column, unless that column is already too loaded. Red arms and crates, a red column outline, and a `TARGET LOCKED` warning identify these attacks. Targets stay fixed once chosen, so you can dodge them. Standing still is dangerous.
 - Every three merged rows starts a harder sprint. Every two sprints adds another arm, up to six.
 - Only descending commits hitting the bot's head are lethal. Side contact and landing on crates are safe. A full-height queue also ends the game.

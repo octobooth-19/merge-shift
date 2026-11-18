@@ -21,8 +21,8 @@
       this.level = 1;
       this.elapsed = 0;
       this.dispatches = 0;
-      this.deliveryNumber = 0;
-      this.lastDelivery = Array(COLS).fill(0);
+      this.biasPhase = -1;
+      this.biasCol = 0;
       this.arms = [];
       for (let i = 0; i < 3; i++) this.addArm();
       this.pushClock = 0;
@@ -47,6 +47,12 @@
     aimArm(arm) {
       const loads = this.columnLoads(arm);
       const minimum = Math.min(...loads);
+      const phase = Math.floor(this.elapsed / 12);
+      if (phase !== this.biasPhase) {
+        this.biasCol = this.biasPhase < 0 ? Math.floor(this.random() * COLS) :
+          (this.biasCol + 3 + Math.floor(this.random() * 3)) % COLS;
+        this.biasPhase = phase;
+      }
       const playerCol = Math.max(0, Math.min(COLS - 1, Math.floor(this.player.x + PW / 2)));
       this.dispatches++;
       arm.targeted = this.dispatches % 4 === 0 && loads[playerCol] <= minimum + 1;
@@ -56,12 +62,17 @@
         arm.col = playerCol;
         return;
       }
-      let candidates = loads.map((load, col) => load === minimum ? col : -1).filter(col => col >= 0);
-      const oldest = Math.min(...candidates.map(col => this.lastDelivery[col]));
-      if (this.deliveryNumber - oldest >= COLS * 2) {
-        candidates = candidates.filter(col => this.lastDelivery[col] === oldest);
+      const weights = loads.map((load, col) => {
+        const distance = Math.abs(col - this.biasCol);
+        const preference = distance === 0 ? 8 : distance === 1 ? 5 : 1;
+        return preference / (1 + load * 0.2);
+      });
+      let choice = this.random() * weights.reduce((sum, weight) => sum + weight, 0);
+      arm.col = COLS - 1;
+      for (let col = 0; col < COLS; col++) {
+        choice -= weights[col];
+        if (choice < 0) { arm.col = col; break; }
       }
-      arm.col = candidates[Math.floor(this.random() * candidates.length)];
     }
     addArm() {
       const i = this.arms.length;
@@ -260,7 +271,6 @@
         if (this.grid[0][arm.col]) { this.lose("The warehouse is full."); return; }
         if (this.falling.some(box => box.x === arm.col && box.y < 0.85)) continue;
         this.falling.push({ x: arm.col, y: -1 / 6, vy: 0, targeted: arm.targeted, locked: arm.locked });
-        this.lastDelivery[arm.col] = ++this.deliveryNumber;
         arm.clock = -0.75;
         arm.retreat = true;
       }

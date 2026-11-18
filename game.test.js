@@ -114,7 +114,10 @@ test("player stays inside warehouse and restart resets progress", () => {
 });
 test("three independent arms deliver to different columns", () => {
   const game = emptyGame();
-  for (const arm of game.arms) arm.clock = game.interval - .001;
+  game.arms.forEach((arm, i) => {
+    arm.col = i;
+    arm.clock = game.interval - .001;
+  });
   game.update(1 / 120);
   assert.equal(game.falling.length, 3);
   assert.equal(new Set(game.falling.map(box => box.x)).size, 3);
@@ -262,7 +265,7 @@ test("delivery waits for a preceding crate to clear the entrance", () => {
   assert.equal(game.falling.length, 2);
   assert.equal(arm.retreat, true);
 });
-test("normal delivery prioritizes low piles, including airborne and reserved crates", () => {
+test("delivery load counts settled, airborne, and reserved crates", () => {
   const game = emptyGame();
   game.arms = [];
   game.grid[ROWS - 1].fill(true);
@@ -273,31 +276,75 @@ test("normal delivery prioritizes low piles, including airborne and reserved cra
   game.arms.push(arm);
   game.dispatches = 0;
   game.aimArm(arm);
-  assert.ok(arm.col >= 3);
   assert.equal(game.columnLoads(arm)[0], 4);
   assert.equal(game.columnLoads(arm)[1], 2);
   assert.equal(game.columnLoads(arm)[2], 2);
 });
-test("normal deliveries correct lopsided piles rather than following old assignments", () => {
-  for (const random of [() => 0, () => .5, () => .99999]) {
-    const game = new Game(random);
+test("normal deliveries cluster, then move their bias without starving columns", () => {
+  for (let seed = 1; seed <= 16; seed++) {
+    let value = seed;
+    const game = new Game(() => {
+      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+      return value / 4294967296;
+    });
     game.arms = [];
-    game.falling = [];
     game.grid.forEach(row => row.fill(false));
-    for (let y = ROWS - 4; y < ROWS; y++) game.grid[y][0] = true;
-    const arm = { retreat: false };
-    game.arms.push(arm);
-    const visits = new Set();
-    for (let i = 0; i < 28; i++) {
-      game.dispatches = 0;
-      game.aimArm(arm);
-      assert.notEqual(arm.col, 0);
-      visits.add(arm.col);
-      const height = game.columnLoads(arm)[arm.col];
-      game.grid[ROWS - height - 1][arm.col] = true;
+    const visited = new Set();
+    let previousBias = game.biasCol;
+    for (let phase = 0; phase < 8; phase++) {
+      game.elapsed = phase * 12;
+      let favorites = 0;
+      for (let i = 0; i < 400; i++) {
+        game.dispatches = 0;
+        const arm = {};
+        game.aimArm(arm);
+        visited.add(arm.col);
+        if (Math.abs(arm.col - game.biasCol) <= 1) favorites++;
+      }
+      if (phase > 0) {
+        const shift = (game.biasCol - previousBias + COLS) % COLS;
+        assert.ok(shift >= 3 && shift <= 5, `seed ${seed}: bias did not move away`);
+      }
+      assert.ok(favorites > 240, `seed ${seed}, phase ${phase}: only ${favorites} favored drops`);
+      previousBias = game.biasCol;
     }
-    assert.equal(visits.size, COLS - 1);
-    assert.deepEqual(game.columnLoads(arm), Array(COLS).fill(4));
+    assert.equal(visited.size, COLS);
+  }
+});
+test("crowding softens the bias instead of automatically filling every gap", () => {
+  const game = emptyGame(), arm = {};
+  game.arms = [];
+  game.biasCol = 3;
+  for (let y = ROWS - 3; y < ROWS; y++) game.grid[y][3] = true;
+  game.dispatches = 0;
+  game.random = () => .5;
+  game.aimArm(arm);
+  assert.equal(arm.col, 3);
+  assert.equal(game.grid[ROWS - 1][4], false);
+});
+test("untouched deliveries build uneven piles rather than completing rows for the player", () => {
+  for (let seed = 1; seed <= 16; seed++) {
+    let value = seed;
+    const game = new Game(() => {
+      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+      return value / 4294967296;
+    });
+    game.start();
+    game.arms = [];
+    game.grid.forEach(row => row.fill(false));
+    for (let i = 0; i < COLS * 3; i++) {
+      game.elapsed = i * 1.3;
+      const arm = {};
+      game.aimArm(arm);
+      let y = ROWS - 1;
+      while (y >= 0 && game.grid[y][arm.col]) y--;
+      assert.ok(y >= 0, `seed ${seed}: piled up before the bias could move`);
+      game.grid[y][arm.col] = true;
+      game.clearRows();
+    }
+    const loads = game.columnLoads();
+    assert.ok(game.lines <= 1, `seed ${seed}: ${game.lines} automatic rows`);
+    assert.ok(Math.max(...loads) - Math.min(...loads) >= 3, `seed ${seed}: piles too balanced`);
   }
 });
 test("jumping onto a floor crate never shoves it in either direction", () => {
@@ -371,10 +418,11 @@ test("every fourth planned delivery can target the bot without overloading its c
   game.dispatches = 3;
   game.aimArm(arm);
   assert.equal(arm.targeted, false);
-  assert.notEqual(arm.col, 4);
+  assert.ok(arm.col >= 0 && arm.col < COLS);
 });
 test("targeted deliveries warn, stay locked, and can be dodged", () => {
   const game = emptyGame(), arm = game.arms[0];
+  game.arms = [arm];
   game.player.x = 4.2;
   game.dispatches = 3;
   game.aimArm(arm);
@@ -399,7 +447,7 @@ test("standing still is not a viable strategy across seeds and starting columns"
     game.player.x = 2 + seed % 4 + .1;
     advance(game, 20);
     assert.equal(game.status, "gameover", `seed ${seed} survived idle`);
-    assert.match(game.event, /head/, `seed ${seed}`);
+    assert.match(game.event, /head|full/, `seed ${seed}`);
   }
 });
 test("jumping from a stack top's own level never shoves that settled crate", () => {
