@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="description" content="Merge Shift by Christian Martinez. A GitHub-inspired arcade game with falling commits, delivery arms, and a tiny coding bot. Play on desktop or phone.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Merge Shift - Keep the queue moving.</title>
+  <style>
+    :root{color-scheme:dark;--bg:#111916;--panel:#19231e;--line:#354338;--ink:#e7edcc;--muted:#93a28b;--lime:#d8fb77;--amber:#f6bf66}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;min-height:100vh;background-image:radial-gradient(ellipse at 50% 30%,#25332655,transparent 65%)}
+    button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--lime);outline-offset:5px}
+    .topbar{height:78px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 5vw;font-size:11px;letter-spacing:2px}.brand{display:flex;align-items:center;gap:12px;font-weight:bold;font-size:14px;letter-spacing:1px}.brandmark{width:24px;height:24px;border:2px solid var(--lime);box-shadow:6px -6px 0 -2px var(--bg),6px -6px 0 0 var(--lime);margin-right:5px}.live{color:var(--muted);display:flex;align-items:center;gap:9px}.dot{width:6px;height:6px;background:var(--lime);border-radius:50%;box-shadow:0 0 12px #d8fb7755}
+    main{max-width:1200px;margin:0 auto;padding:43px 32px 30px}.intro{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:27px}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--lime);margin:0 0 12px}h1{font-family:Impact,"Arial Narrow",sans-serif;font-size:clamp(48px,6vw,78px);font-weight:900;letter-spacing:1px;line-height:.95;margin:0}h1 span{color:var(--lime)}.tagline{font-size:12px;color:var(--muted);line-height:1.9;margin:0 0 2px;text-align:right}
+    .layout{display:grid;grid-template-columns:220px minmax(270px,432px) 220px;gap:30px;justify-content:center;align-items:start}.left,.right{padding-top:2px}.panel{border:1px solid var(--line);background:#19231e88;padding:20px;margin-bottom:16px}.label{font-size:10px;letter-spacing:2px;color:var(--muted);margin:0 0 14px}.score{font-size:39px;letter-spacing:-2px;color:var(--lime);line-height:1}.best{display:flex;justify-content:space-between;font-size:11px;margin-top:18px;color:var(--muted)}.best strong{color:var(--ink);font-weight:normal}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat-value{font-size:28px}.stat-value small{font-size:11px;color:var(--muted)}.meter{height:4px;background:#354338;margin:19px 0 10px}.meter div{height:100%;width:0;background:var(--lime);transition:width .2s}.hint{font-size:10px;color:var(--muted);line-height:1.7}.note{font-size:11px;color:var(--muted);line-height:1.9;padding:5px 3px}.note span{color:var(--amber)}
+    .cabinet{position:relative;border:1px solid #63724f;background:#aebc81;padding:7px;box-shadow:0 12px 50px #0005}.screen{position:relative;overflow:hidden;background:#aebc81;aspect-ratio:432/600}canvas{display:block;width:100%;height:100%;image-rendering:pixelated}.screen:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(transparent 0px,transparent 3px,#15271609 3px,#15271609 4px);z-index:2}.screen-top{display:flex;justify-content:space-between;color:#293d2a;font-size:9px;letter-spacing:1px;padding:4px 5px 9px}.cabinet-bottom{display:flex;justify-content:space-between;color:#293d2a;font-size:9px;letter-spacing:1px;padding:10px 5px 3px}.overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#aebc81d9;color:#243725;text-align:center;padding:24px;z-index:3;backdrop-filter:blur(2px)}.overlay[hidden]{display:none}.mini-crate{width:49px;height:49px;border:4px solid #293d2a;box-shadow:inset 0 0 0 4px #aebc81,inset 0 0 0 6px #293d2a;margin-bottom:24px;transform:rotate(-8deg);position:relative}.mini-crate:after{content:"";position:absolute;left:20px;top:3px;height:35px;width:3px;background:#293d2a;transform:rotate(45deg)}.overlay h2{font-family:Impact,"Arial Narrow",sans-serif;font-size:43px;letter-spacing:1px;line-height:1;margin:0 0 15px}.overlay p{font-size:11px;line-height:1.9;max-width:260px;margin:0 0 24px}.primary{border:0;background:#263a27;color:#e3edbd;padding:15px 26px;font-size:11px;font-weight:bold;letter-spacing:2px;box-shadow:4px 4px 0 #7f905d}.primary:hover{background:#374e30}.overlay .sub{font-size:9px;letter-spacing:1px;margin-top:18px;opacity:.7}.screen-status{position:absolute;bottom:15px;left:0;right:0;text-align:center;color:#293d2a;font-weight:bold;font-size:13px;pointer-events:none}
+    .section-title{font-size:11px;letter-spacing:1.5px;margin:0 0 20px}.control{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px;font-size:11px;color:var(--muted)}.keys{display:flex;gap:5px}kbd{font:11px ui-monospace,monospace;color:var(--ink);border:1px solid #52614c;border-bottom:3px solid #52614c;background:#253127;border-radius:3px;min-width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}.control:last-child{margin-bottom:0}.rule{display:flex;gap:12px;font-size:11px;line-height:1.8;color:var(--muted);margin-bottom:17px}.rule:last-child{margin:0}.rule b{font-size:10px;color:var(--lime);padding-top:2px}.rule strong{color:var(--ink);font-weight:normal}.utility{display:flex;gap:8px;margin-top:13px}.utility button{flex:1;background:transparent;border:1px solid var(--line);color:var(--muted);padding:11px 6px;font-size:10px;letter-spacing:1px}.utility button:hover{border-color:var(--lime);color:var(--lime)}.sound{width:100%;background:transparent;border:1px solid var(--line);color:var(--muted);padding:13px;font-size:10px;letter-spacing:1px}.sound[aria-pressed=true]{color:var(--lime);border-color:#7c944a}.touch{display:flex;justify-content:space-between;gap:12px;margin-top:14px}.touch-group{display:flex;gap:8px}.touch button{touch-action:none;user-select:none;-webkit-user-select:none;min-width:53px;height:42px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:17px}.touch button[data-key=jump]{font-size:10px;padding:0 20px;color:var(--lime)}.touch button:active{background:#405037}
+    footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:9px;letter-spacing:1px;color:#7f8d78}.accent{color:var(--lime)}@media(min-width:1000px){.touch{opacity:.65}.touch:hover{opacity:1}}@media(max-width:1000px){.layout{grid-template-columns:170px minmax(270px,432px);gap:22px}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0}.right .panel{margin:0}.right .sound{grid-column:1/-1}.panel{padding:16px}.tagline{max-width:220px}}@media(max-width:600px){.topbar{height:58px;padding:0 22px}.live{font-size:9px;letter-spacing:1px}main{padding:30px 18px 22px}.intro{display:block;margin-bottom:22px}.tagline{text-align:left;max-width:none;margin-top:13px;font-size:11px}.tagline br{display:none}.layout{display:flex;flex-direction:column;gap:17px}.left{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}.left .panel{margin:0;padding:13px}.left .note,.left .progress-label{display:none}.score{font-size:30px}.best{margin-top:9px;font-size:9px}.label{font-size:9px;margin-bottom:9px}.stat-value{font-size:23px}.meter{margin:12px 0 0}.cabinet,.game-column{width:100%}.right{display:grid;width:100%;gap:10px}.right .panel{padding:13px}.section-title{font-size:10px}.rule{font-size:10px;gap:8px}.control{font-size:10px}.keys{gap:3px}kbd{min-width:22px;padding:0 4px}footer{font-size:8px;line-height:1.8;gap:20px}.touch{margin-top:10px}.touch button{height:48px;min-width:62px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}.overlay{backdrop-filter:none}}
+    :root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--ink:#f0f6fc;--muted:#8b949e;--lime:#7ee787;--amber:#d2a8ff}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background-image:radial-gradient(ellipse at 50% 25%,#163b6738,transparent 58%)}
+    .topbar{font-family:ui-monospace,monospace;background:#01040966}.brandmark{border-color:#a5b4fc;box-shadow:6px -6px 0 -2px var(--bg),6px -6px 0 0 #7ee787;border-radius:4px;transform:rotate(-8deg)}
+    .brand{letter-spacing:-.3px}.live{font-size:10px}.intro{margin-bottom:30px}.eyebrow{font-family:ui-monospace,monospace;color:#a5b4fc;font-size:10px}
+    h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-weight:850;font-size:clamp(48px,6vw,76px);letter-spacing:-4px;line-height:1.04}h1 span{background:linear-gradient(100deg,#7ee787,#79c0ff);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .tagline{font-size:13px}.panel{background:linear-gradient(140deg,#1b2330aa,#161b22);border-radius:12px;padding:20px;box-shadow:0 6px 25px #0001}
+    .label,.hint,.best,.stat-value,.score,.section-title,.rule b,.utility,.sound,footer,.note{font-family:ui-monospace,SFMono-Regular,monospace}.score{color:#f0f6fc;font-weight:600}.best strong{color:#7ee787}.meter{background:#30363d;border-radius:5px;overflow:hidden}.meter div{background:linear-gradient(90deg,#238636,#7ee787)}
+    .cabinet{background:#161b22;border:1px solid #485569;border-radius:14px;padding:9px;box-shadow:0 20px 70px #0007,0 0 45px #58a6ff0b}.screen{background:#0d1117;border-radius:7px}.screen:after{display:none}.screen-top,.cabinet-bottom{color:#8b949e;font-family:ui-monospace,monospace;padding:7px 7px 13px;font-size:9px}.cabinet-bottom{padding:13px 7px 5px}
+    .overlay{background:linear-gradient(180deg,#0d1117d9,#0d1117f5);color:#f0f6fc;backdrop-filter:blur(5px)}.overlay h2{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:43px;letter-spacing:-2px;font-weight:800;line-height:1.05}.overlay p{color:#a5b2c3;font-size:12px;line-height:1.9}.overlay .sub{font-family:ui-monospace,monospace;color:#8b949e;font-size:8px;letter-spacing:.5px}
+    .mini-crate{border:1px solid #7ee78755;box-shadow:0 0 40px #23863633;background:#23863622;border-radius:12px;transform:rotate(-8deg);width:60px;height:60px}.mini-crate:after{content:"";width:20px;height:20px;border:3px solid #7ee787;border-radius:50%;background:#162e24;left:17px;top:17px;transform:none}.mini-crate:before{content:"";position:absolute;height:3px;width:40px;background:#7ee787;left:9px;top:28px}
+    .primary{background:#238636;color:white;border:1px solid #7ee78755;border-radius:7px;box-shadow:0 4px 20px #23863633;font-family:ui-monospace,monospace;font-size:10px;letter-spacing:1px;padding:15px 22px}.primary:hover{background:#2ea043}.screen-status{color:#7ee787;background:#0d1117cc;bottom:25px;padding:10px;font-family:ui-monospace,monospace}
+    .screen-status:empty{display:none}kbd{background:#21262d;border-color:#48515d;border-bottom-color:#48515d;border-radius:5px;color:#c9d1d9}.utility button,.sound,.touch button{border-radius:7px;background:#161b22}.utility button:hover,.sound:hover{background:#21262d}.sound[aria-pressed=true]{border-color:#238636;color:#7ee787}.touch button:active{background:#238636}.section-title{font-size:10px}.rule b{background:#21262d;color:#a5b4fc;border-radius:5px;align-self:start;padding:2px 6px}.rule{font-size:12px}.note{font-size:10px}.dot{background:#3fb950;box-shadow:0 0 12px #3fb95055}.control{font-size:12px}.right{display:flex;flex-direction:column}.right .panel,.right .sound{width:100%}.right .sound{margin-top:0}
+    @media(max-width:1000px){.right{display:grid}.panel{padding:16px}}@media(max-width:600px){h1{letter-spacing:-2.5px}.tagline{font-size:12px}.rule,.control{font-size:10px}.panel{border-radius:9px}.right{display:grid}.live{font-size:8px}.brand{font-size:12px}.topbar{padding:0 20px}.overlay h2{font-size:39px}}
+    .game-column{width:100%;max-width:432px;margin:0 auto}
+    @media(max-width:600px){.game-column{max-width:min(432px,calc((100svh - 190px)*.68))}.overlay{padding:18px}.overlay h2{font-size:clamp(28px,6.8vw,39px)}.overlay p{font-size:11px}}
+    .touch button[data-key=push]{font-size:10px;padding:0 12px;color:#d2a8ff}.touch button.pressed{background:#238636;border-color:#7ee787}.touch button[data-key=push].pressed{background:#593b7d;border-color:#d2a8ff}.touch button{ -webkit-touch-callout:none}.phone-help{font-size:10px;color:var(--muted);text-align:center;margin:10px 0 0}.share{display:flex;gap:12px;align-items:center;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:10px;font-size:11px;color:var(--muted)}.share img{width:80px;height:80px;background:white;border-radius:4px}.share a{color:var(--lime)}.share p{margin:0;line-height:1.9}
+    @media(max-width:600px){.touch{gap:8px}.touch-group{gap:6px}.touch button{min-width:44px}.touch button[data-key=jump]{padding:0 12px}.phone-help{font-size:9px}.playing .topbar,.playing .intro,.playing .right,.playing footer,.playing .phone-help{display:none}.playing main{padding:8px 12px max(8px,env(safe-area-inset-bottom))}.playing .layout{gap:8px}.playing .left .panel{padding:8px 12px}.playing .best,.playing .left .meter{display:none}.playing .left .label{margin-bottom:3px;font-size:8px}.playing .score,.playing .stat-value{font-size:21px}.playing .game-column{max-width:min(100%,calc((100svh - 200px)*.6857))}.playing .screen-top{padding:4px 4px 8px;font-size:8px}.playing .cabinet-bottom{padding:8px 4px 3px;font-size:8px}.playing .touch{margin-top:8px}.playing .utility{margin-top:8px}.playing .touch button{height:48px}.playing .overlay .mini-crate{display:none}.playing .overlay h2{font-size:28px}.playing .overlay p{font-size:10px;margin-bottom:16px}.playing .overlay .sub{font-size:7px}.playing .overlay .primary{padding:12px;font-size:9px}.playing .overlay{padding:12px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><i class="brandmark" aria-hidden="true"></i> the developer arcade</div><div class="live"><i class="dot"></i> ALL SYSTEMS PLAYABLE</div></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">git checkout -b one-more-game</p><h1>Merge <span>Shift.</span></h1></div><p class="tagline">Small bot. Big backlog.<br>Keep the queue moving. Don't get squashed.</p></div>
+    <div class="layout">
+      <aside class="left">
+        <section class="panel"><p class="label">YOUR SCORE</p><div class="score" id="score">00000</div><div class="best"><span>PERSONAL BEST</span><strong id="best">00000</strong></div></section>
+        <section class="panel"><div class="stats"><div><p class="label">SPRINT</p><div class="stat-value" id="level">01</div></div><div><p class="label">MERGES</p><div class="stat-value" id="rows">00</div></div></div><div class="meter"><div id="progress"></div></div><div class="hint progress-label" id="progress-label">3 merges to the next sprint</div></section>
+        <p class="note"><span>// DEVELOPER NOTES</span><br>8 columns. 10 rows. No slack.<br>Jump and shove in midair.<br>One extra arm every 2 sprints.<br>Up to 6. Keep your head clear.</p>
+      </aside>
+      <section class="game-column" aria-label="Merge Shift game">
+        <div class="cabinet">
+          <div class="screen-top"><span id="screen-label">main / sprint-01</span><span id="clock">00:00</span></div>
+          <div class="screen">
+            <canvas id="game" width="288" height="420" tabindex="0" aria-label="Commit warehouse game. Arrow keys move. Hold Shift plus direction to push, including in midair. Space jumps. P pauses."></canvas>
+            <div class="screen-status" id="status" role="status" aria-live="polite"></div>
+            <div class="overlay" id="overlay"><div class="mini-crate" aria-hidden="true"></div><h2 id="overlay-title">Less room.<br>More commits.</h2><p id="overlay-copy">Three delivery arms. One tiny queue.<br>Hold SHIFT or PUSH + direction to shove.<br>Jump onto crates. Merge a full row.</p><button class="primary" id="start">LET'S SHIP IT &gt;</button><span class="sub" id="overlay-sub">ARROWS TO MOVE / SPACE TO JUMP</span></div>
+          </div>
+          <div class="cabinet-bottom"><span id="branch-label">* main / 3 arms</span><span id="drop-label">AWAITING FIRST COMMIT</span></div>
+        </div>
+        <div class="touch" aria-label="Touch controls"><div class="touch-group"><button data-key="left" aria-label="Move left">&larr;</button><button data-key="right" aria-label="Move right">&rarr;</button></div><div class="touch-group"><button data-key="push" aria-label="Hold to push">PUSH</button><button data-key="jump" aria-label="Jump">JUMP &uarr;</button></div></div>
+        <div class="utility"><button id="pause">PAUSE [P]</button><button id="restart">RESTART [R]</button></div>
+        <p class="phone-help">Hold PUSH + direction to shove. Release PUSH to jump onto crates.</p>
+      </section>
+      <aside class="right">
+        <section class="panel"><h2 class="section-title">THE CONTROLS</h2><div class="control"><span>Move</span><div class="keys"><kbd>&larr;</kbd><kbd>&rarr;</kbd></div></div><div class="control"><span>Push + move</span><kbd>SHIFT</kbd></div><div class="control"><span>Jump</span><kbd>SPACE</kbd></div><div class="control"><span>Pause</span><kbd>P</kbd></div><div class="hint">A / D to move. W to jump.<br>Hold SHIFT to shove in midair.</div></section>
+        <section class="panel"><h2 class="section-title">HOW TO SHIP</h2><div class="rule"><b>01</b><div><strong>Clear the merge queue.</strong><br>A full row merges away.</div></div><div class="rule"><b>02</b><div><strong>Mind your head.</strong><br>Side touches are safe. Head hits aren't. Don't let the queue overflow.</div></div><div class="rule"><b>03</b><div><strong>More arms. Less room.</strong><br>Arms deliver, drop, and leave. Every 2 sprints, another joins (max 6).</div></div></section>
+        <button class="sound" id="sound" aria-pressed="false">SOUND: OFF</button>
+        <div class="share"><a href="qr.png" aria-label="Open phone play QR code"><img src="qr.png" alt="Scan to play Merge Shift on your phone" width="80" height="80"></a><p>TAKE THE QUEUE WITH YOU<br>Scan to play on your phone.<br><a href="qr.png" download>Download QR code</a></p></div>
+      </aside>
+    </div>
+    <footer><span>OLD-SCHOOL GAMEPLAY. NEW-SCHOOL MERGE CONFLICTS.</span><span>GITHUB-INSPIRED <span class="accent">/</span> BUILT TO PLAY</span></footer>
+  </main>
+  <script src="game.js"></script>
+  <script>
+    "use strict";
+    const { Game, COLS, ROWS } = StackGame;
+    const game = new Game(), canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+    const $ = id => document.getElementById(id);
+    const input = { left:false, right:false, jump:false, push:false };
+    const T = 36, TOP = 60, dark = "#0d1117", mid = "#30363d", light = "#0d1117";
+    const W = COLS * T, H = TOP + ROWS * T;
+    canvas.width = W; canvas.height = H;
+    canvas.parentElement.style.aspectRatio = `${W} / ${H}`;
+    let best = 0, storageAvailable = true, sound = false, audio, last = 0, accumulator = 0, displayedState = "", previousScore = 0;
+    try { best = Number(localStorage.getItem("merge-shift-hard-best")) || 0; }
+    catch { storageAvailable = false; $("best").title = "Browser storage unavailable. Best score is kept for this visit."; }
+    function beep(frequency, duration = .07) {
+      if (!sound) return;
+      try {
+        audio ||= new (window.AudioContext || window.webkitAudioContext)();
+        if (audio.state === "suspended") audio.resume();
+        const oscillator = audio.createOscillator(), gain = audio.createGain();
+        oscillator.type = "square"; oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(.035, audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
+        oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+      } catch (error) {
+        sound = false; $("sound").textContent = "SOUND UNAVAILABLE"; $("sound").setAttribute("aria-pressed", "false");
+        console.warn("Audio could not be started:", error);
+      }
+    }
+    function crate(x, y, falling = false) {
+      const px = Math.round(x*T), py = Math.round(TOP+y*T);
+      const accent=falling?"#d2a8ff":"#7ee787";
+      ctx.fillStyle=falling?"#30213e":"#123222";ctx.strokeStyle=falling?"#8957e5":"#2d7746";ctx.lineWidth=1;
+      ctx.beginPath();ctx.roundRect(px+2,py+2,32,32,5);ctx.fill();ctx.stroke();
+      ctx.strokeStyle=accent;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px+7,py+18);ctx.lineTo(px+13,py+18);ctx.moveTo(px+23,py+18);ctx.lineTo(px+29,py+18);ctx.stroke();
+      ctx.beginPath();ctx.arc(px+18,py+18,5,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle="#ffffff12";ctx.fillRect(px+7,py+5,22,1);
+      if(falling){ctx.fillStyle="#d2a8ff66";ctx.fillRect(px+11,py-9,2,6);ctx.fillRect(px+23,py-15,2,10);}
+    }
+    function draw() {
+      ctx.fillStyle = light; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "#212a35";
+      for(let y=TOP;y<H;y+=18) for(let x=0;x<W;x+=18) ctx.fillRect(x+8,y+8,1,1);
+      ctx.fillStyle = "#21262d"; ctx.fillRect(0,17,W,5); ctx.fillRect(0,45,W,1);
+      for(let x=0;x<W;x+=36) { ctx.fillRect(x,19,2,26); }
+      for (const arm of game.arms) {
+        if (arm.clock < 0 && !arm.retreat) continue;
+        const craneX = game.armPosition(arm)*T+18;
+        if (game.armWarning(arm) && game.status === "running") {
+          const beam=ctx.createLinearGradient(0,TOP,0,H);beam.addColorStop(0,"#a371f724");beam.addColorStop(1,"#a371f706");
+          ctx.fillStyle = beam; ctx.fillRect(arm.col*T,TOP,T,H-TOP);
+          if (Math.floor(game.elapsed*6)%2===0) {
+            ctx.fillStyle = "#d2a8ff"; ctx.font = "bold 19px monospace"; ctx.textAlign = "center"; ctx.fillText("!",arm.col*T+18,100);
+            ctx.fillRect(arm.col*T+8,H-9,20,3);
+          }
+        }
+        if (!arm.retreat) crate(game.armPosition(arm),-1/6,true);
+        ctx.fillStyle = "#6e7681"; ctx.fillRect(craneX-17,10,34,19); ctx.fillStyle = "#21262d"; ctx.fillRect(craneX-11,14,22,10);
+        ctx.fillStyle = arm.retreat ? "#8b949e" : "#7ee787";ctx.fillRect(craneX-7,17,14,3);
+        ctx.fillStyle = "#8b949e"; ctx.fillRect(craneX-2,29,4,12);
+        ctx.fillRect(craneX-11,38,4,15); ctx.fillRect(craneX+7,38,4,15); ctx.fillRect(craneX-9,49,6,4); ctx.fillRect(craneX+3,49,6,4);
+      }
+      for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(game.grid[y][x]) crate(x,y);
+      for(const box of game.falling) crate(box.x,box.y,true);
+      const p = game.player, x=Math.round(p.x*T), y=Math.round(TOP+p.y*T);
+      const stride = p.grounded && (input.left||input.right) ? Math.sin(p.walk)*3 : 0;
+      ctx.fillStyle="#79c0ff";ctx.fillRect(x+10,y-2,3,5);ctx.fillStyle="#7ee787";ctx.fillRect(x+9,y-4,5,3);
+      ctx.fillStyle="#c9d1d9";ctx.beginPath();ctx.roundRect(x+1,y+3,22,16,5);ctx.fill();
+      ctx.fillStyle="#18253b";ctx.beginPath();ctx.roundRect(x+4,y+7,16,8,3);ctx.fill();
+      ctx.fillStyle="#79c0ff";ctx.fillRect(x+6,y+9,4,3);ctx.fillRect(x+14,y+9,4,3);
+      ctx.fillStyle="#8b949e";ctx.fillRect(x+5,y+20,14,7);ctx.fillRect(x+1,y+20,3,6);ctx.fillRect(x+20,y+20,3,6);
+      ctx.fillStyle="#79c0ff";ctx.fillRect(x+5,y+26,5,5+stride);ctx.fillRect(x+14,y+26,5,5-stride);
+      ctx.fillStyle="#7ee787";ctx.fillRect(x+10,y+22,4,3);
+      ctx.fillStyle="#30363d"; ctx.fillRect(0,H-2,W,2);
+      if(game.flash>0) {ctx.fillStyle=`rgba(126,231,135,${game.flash*.4})`;ctx.fillRect(0,TOP,W,H-TOP);}
+    }
+    function syncUI() {
+      $("score").textContent = String(game.score).padStart(5,"0");
+      if(game.score>best) {
+        best=game.score;
+        if(storageAvailable) try {localStorage.setItem("merge-shift-hard-best",String(best));} catch(error) {
+          storageAvailable=false; $("best").title="Best score cannot be saved in this browser."; console.warn("Could not save best score:",error);
+        }
+      }
+      $("best").textContent=String(best).padStart(5,"0");
+      $("level").textContent=String(game.level).padStart(2,"0"); $("rows").textContent=String(game.lines).padStart(2,"0");
+      $("progress").style.width=(game.lines%3)/3*100+"%";
+      $("progress-label").textContent=`${3-game.lines%3} merges to the next sprint`;
+      $("screen-label").textContent=`main / sprint-${String(game.level).padStart(2,"0")}`;
+      $("branch-label").textContent=`* main / ${game.arms.length} arms`;
+      const seconds=Math.floor(game.elapsed); $("clock").textContent=`${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+      $("drop-label").textContent=game.status==="running"?(game.warning?"! INCOMING COMMIT":"CI / RUNNING"):game.status==="paused"?"CI / PAUSED":"AWAITING FIRST COMMIT";
+      $("status").textContent=game.flash>0?"PULL REQUEST MERGED +"+game.lastClearScore:"";
+      if(game.score-previousScore>=100) beep(880,.2);
+      previousScore=game.score;
+      if(displayedState===game.status) return;
+      displayedState=game.status;
+      document.body.classList.toggle("playing",game.status!=="ready");
+      $("overlay").hidden=game.status==="running";
+      $("pause").textContent=game.status==="paused"?"RESUME [P]":"PAUSE [P]";
+      if(game.status==="paused") {
+        $("overlay-title").innerHTML="Draft mode.";
+        $("overlay-copy").textContent="Take a breath. Your merge queue is on hold.";
+        $("start").textContent="RESUME THE SPRINT >"; $("overlay-sub").textContent="OR PRESS P TO RESUME";
+      } else if(game.status==="gameover") {
+        beep(110,.3);
+        $("overlay-title").innerHTML="Build failed.<br>Ship happens.";
+        $("overlay-copy").textContent=`${game.event.replace("crate","commit")} ${game.score} points. ${game.lines} successful merges. A fresh branch is a fresh start.`;
+        $("start").textContent="RE-RUN THE BUILD >"; $("overlay-sub").textContent="OR PRESS ENTER TO RESTART";
+      }
+    }
+    function clearInput() {
+      input.left=input.right=input.jump=input.push=false;
+      document.querySelectorAll("[data-key]").forEach(button=>button.classList.remove("pressed"));
+    }
+    function start() {
+      clearInput();
+      if(game.status==="paused") game.pause(); else game.start();
+      accumulator=0; beep(440); syncUI(); canvas.focus({preventScroll:true});
+      document.querySelector(".game-column").scrollIntoView({block:"start",behavior:"instant"});
+    }
+    $("start").addEventListener("click",start);
+    $("restart").addEventListener("click",()=>{game.start();clearInput();accumulator=0;syncUI();canvas.focus({preventScroll:true});});
+    $("pause").addEventListener("click",()=>{game.pause();clearInput();syncUI();});
+    $("sound").addEventListener("click",()=>{sound=!sound;$("sound").textContent=`SOUND: ${sound?"ON":"OFF"}`;$("sound").setAttribute("aria-pressed",String(sound));beep(660);});
+    const keymap={ArrowLeft:"left",a:"left",A:"left",ArrowRight:"right",d:"right",D:"right",ArrowUp:"jump",w:"jump",W:"jump"," ":"jump",Shift:"push"};
+    window.addEventListener("keydown",event=>{
+      if(event.target instanceof HTMLButtonElement && (event.key===" "||event.key==="Enter")) return;
+      if(keymap[event.key]) {event.preventDefault();input[keymap[event.key]]=true;}
+      if(event.repeat) return;
+      if(event.key.toLowerCase()==="p"||event.key==="Escape") {game.pause();clearInput();syncUI();}
+      if(event.key.toLowerCase()==="r") {game.start();clearInput();syncUI();}
+      if(event.key==="Enter"&&game.status!=="running") {event.preventDefault();start();}
+    });
+    window.addEventListener("keyup",event=>{if(keymap[event.key]){event.preventDefault();input[keymap[event.key]]=false;}});
+    document.querySelectorAll("[data-key]").forEach(button=>{
+      button.addEventListener("contextmenu",event=>event.preventDefault());
+      button.addEventListener("pointerdown",event=>{event.preventDefault();button.setPointerCapture(event.pointerId);input[button.dataset.key]=true;button.classList.add("pressed");});
+      for(const type of ["pointerup","pointercancel","lostpointercapture"]) button.addEventListener(type,()=>{input[button.dataset.key]=false;button.classList.remove("pressed");});
+    });
+    function autoPause() {clearInput();if(game.status==="running"){game.pause();syncUI();}}
+    window.addEventListener("blur",autoPause);
+    document.addEventListener("visibilitychange",()=>{if(document.hidden) autoPause();});
+    function frame(time) {
+      const delta=last?Math.min((time-last)/1000,.1):0;last=time;
+      if(game.status==="running") {
+        accumulator+=delta;
+        while(accumulator>=1/120) {game.update(1/120,input);accumulator-=1/120;}
+      } else accumulator=0;
+      draw();syncUI();requestAnimationFrame(frame);
+    }
+    syncUI();draw();requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
